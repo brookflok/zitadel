@@ -1,7 +1,15 @@
 import createNextIntlPlugin from "next-intl/plugin";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { DEFAULT_CSP } from "./constants/csp.js";
 
 const withNextIntl = createNextIntlPlugin();
+
+// Pin file-tracing to the monorepo root so the standalone output keeps the
+// `apps/login/...` layout the build script expects (Next defaults to walking
+// upward for a lockfile and can pick the wrong ancestor on dev machines).
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const monorepoRoot = path.resolve(__dirname, "../..");
 
 const secureHeaders = [
   {
@@ -31,6 +39,7 @@ const secureHeaders = [
 const nextConfig = {
   basePath: process.env.NEXT_PUBLIC_BASE_PATH,
   output: process.env.NEXT_OUTPUT_MODE || undefined,
+  outputFileTracingRoot: monorepoRoot,
   reactStrictMode: true,
   experimental: {
     // Add React 19 compatibility optimizations
