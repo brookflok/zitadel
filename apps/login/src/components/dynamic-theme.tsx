@@ -50,7 +50,7 @@ export function DynamicTheme({
                         <img
                           src={ytskolaLogo}
                           alt="YT Škola"
-                          className="h-10 w-auto"
+                          className="h-auto w-auto max-w-[240px]"
                         />
                         <div className="max-w-xl space-y-6">
                           <h1 className="text-4xl font-extrabold leading-tight xl:text-5xl">
@@ -101,7 +101,7 @@ export function DynamicTheme({
                       <img
                         src={ytskolaLogo}
                         alt="YT Škola"
-                        className="h-12 w-auto"
+                        className="h-auto w-auto max-w-[240px]"
                       />
                     </div>
 
