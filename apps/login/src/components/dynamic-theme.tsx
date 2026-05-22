@@ -45,7 +45,7 @@ export function DynamicTheme({
                 <Card padding="">
                   <div className="grid min-h-[520px] grid-cols-1 overflow-hidden lg:grid-cols-2">
                     {/* Left: ytskola marketing panel */}
-                    <div className="relative hidden overflow-hidden bg-[#ef0000] text-white lg:flex">
+                    <div className="relative hidden overflow-hidden bg-[#ffde00] text-black lg:flex">
                       <div className="flex w-full flex-col justify-between p-10">
                         <img
                           src={ytskolaLogo}
@@ -59,11 +59,11 @@ export function DynamicTheme({
                               👋
                             </span>
                           </h1>
-                          <p className="text-lg text-white/85">
+                          <p className="text-lg text-black/80">
                             Prijavite se na svoj račun za pristup materijalima kursa.
                           </p>
                         </div>
-                        <div className="text-sm text-white/75">
+                        <div className="text-sm text-black/70">
                           Copyright © 2020–{new Date().getFullYear()} Relativno LLC
                         </div>
                       </div>
