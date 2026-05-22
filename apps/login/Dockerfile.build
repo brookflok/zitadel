@@ -1,0 +1,55 @@
+# Multi-stage Dockerfile for the YTŠkola Zitadel login.
+# Build context MUST be the monorepo root:
+#   docker build -t ytskola-login:v4.13.0 -f apps/login/Dockerfile.build .
+#
+# Stage 1 builds the standalone Next.js artifact from source.
+# Stage 2 is the runtime image (mirrors apps/login/Dockerfile upstream).
+
+# ----------------------------------------------------------------------------
+# Stage 1: builder
+# ----------------------------------------------------------------------------
+FROM node:24-alpine AS builder
+RUN apk add --no-cache bash git python3 make g++
+WORKDIR /workspace
+
+# Enable corepack and pin pnpm to whatever the repo's packageManager field declares.
+RUN corepack enable
+
+# Copy the entire monorepo (filtered by .dockerignore at the repo root).
+COPY . .
+
+# Activate the workspace's pinned pnpm and install all workspace deps.
+RUN corepack prepare --activate
+RUN pnpm install --frozen-lockfile
+
+# Generate proto types, build the client SDK, then build the login app.
+RUN pnpm --filter @zitadel/proto generate \
+ && pnpm --filter @zitadel/client build \
+ && pnpm --filter @zitadel/login build
+
+# ----------------------------------------------------------------------------
+# Stage 2: runtime
+# ----------------------------------------------------------------------------
+FROM node:24-alpine
+WORKDIR /app
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nextjs
+# /.env-file/.env is the mount point the entrypoint sources additional secrets from.
+RUN mkdir -p /.env-file && touch /.env-file/.env && chown -R nextjs:nodejs /.env-file
+
+COPY --from=builder --chown=nextjs:nodejs /workspace/apps/login/.next/standalone ./
+
+USER nextjs
+ENV HOSTNAME="::" \
+    PORT="3000" \
+    NODE_ENV="production" \
+    NODE_OPTIONS="--use-openssl-ca" \
+    SSL_CERT_FILE="/etc/ssl/certs/ca-certificates.crt" \
+    SSL_CERT_DIR="/etc/ssl/certs" \
+    ZITADEL_TLS_ENABLED="false" \
+    OTEL_SERVICE_NAME="zitadel-login" \
+    OTEL_EXPORTER_OTLP_PROTOCOL="http/protobuf"
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD ["/usr/local/bin/node", "/app/healthcheck.mjs", "/ui/v2/login/ready"]
+ENTRYPOINT ["/app/entrypoint.sh", "node", "apps/login/server.js"]

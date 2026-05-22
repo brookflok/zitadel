@@ -1,0 +1,37 @@
+# Repo-root .dockerignore for apps/login/Dockerfile.build.
+# Trims local build artifacts from the build context so server builds don't
+# pull in 1+ GB of host node_modules and stale .next output.
+
+**/node_modules
+**/.next
+**/dist
+**/cjs
+**/es
+**/types
+
+# VCS, IDE, OS files
+.git
+.gitignore
+.github
+.devcontainer
+.vscode
+.idea
+.DS_Store
+
+# Logs and test artifacts
+**/*.log
+**/coverage
+**/.nyc_output
+**/playwright-report
+**/test-results
+**/screenshots
+
+# Go-side build outputs (the login app does not need them)
+.golangci.yaml
+internal/**/zz_generated*
+
+# Local env files — DO NOT bake host secrets into the image
+**/.env.local
+**/.env.development.local
+**/.env.test.local
+**/.env.production.local
