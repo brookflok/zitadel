@@ -27,6 +27,11 @@ RUN pnpm --filter @zitadel/proto generate \
  && pnpm --filter @zitadel/client build \
  && pnpm --filter @zitadel/login build
 
+# The standalone server runs from /app/apps/login/, but Next's build script only
+# copies public/ to the standalone root. Without this duplicate, every static
+# asset (favicon, brand logos) under the basePath returns 404.
+RUN cp -r /workspace/apps/login/public /workspace/apps/login/.next/standalone/apps/login/public
+
 # ----------------------------------------------------------------------------
 # Stage 2: runtime
 # ----------------------------------------------------------------------------
