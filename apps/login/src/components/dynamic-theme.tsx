@@ -23,6 +23,7 @@ export function DynamicTheme({
   const { isSideBySide } = useResponsiveLayout();
   const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
   const ytskolaLogo = `${basePath}/ytskola-logo.png`;
+  const ytskolaLogoWhite = `${basePath}/ytskola-white-logo.png`;
 
   const actualChildren: ReactNode = React.useMemo(() => {
     if (typeof children === "function") {
@@ -48,7 +49,7 @@ export function DynamicTheme({
                     <div className="relative hidden overflow-hidden bg-[linear-gradient(to_bottom,#FFB3C1_0%,#E63946_50%,#8B0000_100%)] text-white lg:flex">
                       <div className="flex w-full flex-col justify-between p-10">
                         <img
-                          src={ytskolaLogo}
+                          src={ytskolaLogoWhite}
                           alt="YT Škola"
                           className="h-auto w-auto max-w-[240px]"
                         />
