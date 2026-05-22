@@ -10,11 +10,29 @@ type Props = {
   children: ReactNode;
 };
 
+// YTŠkola: ignore the Zitadel-admin primary/warn colors and force the SEOLAXY brand.
+const YTSKOLA_PRIMARY = "#3a2466";
+
+function withYtskolaBrand(policy: BrandingSettings | undefined): BrandingSettings {
+  const base = (policy ?? {}) as BrandingSettings;
+  return {
+    ...base,
+    lightTheme: {
+      ...(base.lightTheme ?? {}),
+      primaryColor: YTSKOLA_PRIMARY,
+    },
+    darkTheme: {
+      ...(base.darkTheme ?? {}),
+      primaryColor: YTSKOLA_PRIMARY,
+    },
+  } as BrandingSettings;
+}
+
 export const ThemeWrapper = ({ children, branding }: Props) => {
   const { setTheme: setNextTheme } = useTheme();
 
   useEffect(() => {
-    setTheme(document, branding);
+    setTheme(document, withYtskolaBrand(branding));
   }, [branding]);
 
   // Handle branding themeMode to force specific theme
