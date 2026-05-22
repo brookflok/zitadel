@@ -8,11 +8,10 @@ import { ThemeWrapper } from "./theme-wrapper";
 
 /**
  * YTŠkola layout:
- * - side-by-side: left panel is fixed ytskola marketing (purple bg, white logo, hero
- *   copy, copyright). Right panel stacks the page-specific title block on top of the
- *   form. Page children: first = title block, second = form.
- * - top-to-bottom: original upstream behavior, just swapping the upstream branding logo
- *   for the ytskola logo.
+ * - side-by-side: left panel is fixed ytskola marketing (red bg, color logo, hero
+ *   copy, copyright). Right panel stacks the page-specific title block on top of
+ *   the form. Page children: first = title block, second = form.
+ * - top-to-bottom: original upstream behavior with the ytskola color logo.
  */
 export function DynamicTheme({
   branding,
@@ -23,8 +22,7 @@ export function DynamicTheme({
 }) {
   const { isSideBySide } = useResponsiveLayout();
   const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
-  const logoWhite = `${basePath}/ytskola-logo-white.png`;
-  const logoColor = `${basePath}/ytskola-logo.png`;
+  const ytskolaLogo = `${basePath}/ytskola-logo.png`;
 
   const actualChildren: ReactNode = React.useMemo(() => {
     if (typeof children === "function") {
@@ -44,29 +42,29 @@ export function DynamicTheme({
 
             return (
               <div className="relative mx-auto w-full max-w-[1100px] px-4 py-4 md:px-8">
-                <Card>
-                  <div className="grid min-h-[520px] grid-cols-1 lg:grid-cols-2">
+                <Card padding="">
+                  <div className="grid min-h-[520px] grid-cols-1 overflow-hidden lg:grid-cols-2">
                     {/* Left: ytskola marketing panel */}
-                    <div className="relative hidden overflow-hidden bg-[#3a2466] text-white lg:flex">
+                    <div className="relative hidden overflow-hidden bg-[#ef0000] text-white lg:flex">
                       <div className="flex w-full flex-col justify-between p-10">
                         <img
-                          src={logoWhite}
+                          src={ytskolaLogo}
                           alt="YT Škola"
                           className="h-10 w-auto"
                         />
                         <div className="max-w-xl space-y-6">
                           <h1 className="text-4xl font-extrabold leading-tight xl:text-5xl">
-                            Dobrodošli u SEOLAXY Kurs!{" "}
+                            Dobrodošli u Youtube Školu{" "}
                             <span role="img" aria-label="pozdrav">
                               👋
                             </span>
                           </h1>
-                          <p className="text-lg text-indigo-100">
+                          <p className="text-lg text-white/85">
                             Prijavite se na svoj račun za pristup materijalima kursa.
                           </p>
                         </div>
-                        <div className="text-sm text-indigo-100/80">
-                          Copyright © 2020–{new Date().getFullYear()} SEOLAXY®
+                        <div className="text-sm text-white/75">
+                          Copyright © 2020–{new Date().getFullYear()} Relativno LLC
                         </div>
                       </div>
                     </div>
@@ -101,7 +99,7 @@ export function DynamicTheme({
                   <div className="mx-auto flex flex-col items-center space-y-8">
                     <div className="relative -mb-4 flex flex-row items-center justify-center">
                       <img
-                        src={logoColor}
+                        src={ytskolaLogo}
                         alt="YT Škola"
                         className="h-12 w-auto"
                       />

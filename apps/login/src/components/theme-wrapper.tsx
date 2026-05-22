@@ -10,8 +10,8 @@ type Props = {
   children: ReactNode;
 };
 
-// YTŠkola: ignore the Zitadel-admin primary/warn colors and force the SEOLAXY brand.
-const YTSKOLA_PRIMARY = "#3a2466";
+// YTŠkola: ignore the Zitadel-admin primary/warn colors and force the brand red.
+const YTSKOLA_PRIMARY = "#ef0000";
 
 function withYtskolaBrand(policy: BrandingSettings | undefined): BrandingSettings {
   const base = (policy ?? {}) as BrandingSettings;
