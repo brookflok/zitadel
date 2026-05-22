@@ -31,8 +31,11 @@ export default getRequestConfig(async () => {
 
   const localeMessages = (await import(`../../locales/${FORCED_LOCALE}.json`)).default;
 
+  // Admin-set "hosted login translations" come first as a baseline; the local
+  // Croatian file is merged on top so it always wins. The user wants a
+  // deterministic Croatian UI regardless of what the Zitadel admin has stored.
   return {
     locale: FORCED_LOCALE,
-    messages: deepmerge.all([localeMessages, customMessages]) as Record<string, string>,
+    messages: deepmerge.all([customMessages, localeMessages]) as Record<string, string>,
   };
 });
