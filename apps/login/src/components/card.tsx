@@ -46,9 +46,10 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
     },
     ref,
   ) => {
-    // Use theme-based values if not explicitly provided
+    // Use theme-based values if not explicitly provided.
+    // `??` for padding so callers can pass "" to mean "explicitly no padding".
     const actualRoundness = roundness || getDefaultCardRoundness();
-    const actualPadding = padding || getDefaultCardPadding();
+    const actualPadding = padding ?? getDefaultCardPadding();
     const actualBackground = getDefaultCardBackground();
     const actualCardStyling = getDefaultCardStyling();
 
