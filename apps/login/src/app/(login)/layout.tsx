@@ -8,12 +8,18 @@ import ThemeSwitch from "@/components/theme-switch";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
-import { Lato } from "next/font/google";
+import { Hanken_Grotesk, Lato } from "next/font/google";
 import React, { Suspense } from "react";
 
 const lato = Lato({
   weight: ["400", "700", "900"],
   subsets: ["latin"],
+});
+
+const hankenGrotesk = Hanken_Grotesk({
+  weight: ["400", "500", "700"],
+  subsets: ["latin"],
+  variable: "--font-hanken-grotesk",
 });
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -23,7 +29,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html className={`${lato.className}`} suppressHydrationWarning>
+    <html className={`${lato.className} ${hankenGrotesk.variable}`} suppressHydrationWarning>
       <head />
       <body>
         <ThemeProvider>

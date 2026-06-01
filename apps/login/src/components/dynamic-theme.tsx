@@ -6,11 +6,13 @@ import React, { Children, ReactNode } from "react";
 import { Card } from "./card";
 import { ThemeWrapper } from "./theme-wrapper";
 
+const HANKEN = { fontFamily: "var(--font-hanken-grotesk), sans-serif" } as const;
+
 /**
  * YTŠkola layout:
- * - side-by-side: left panel is fixed ytskola marketing (red bg, color logo, hero
- *   copy, copyright). Right panel stacks the page-specific title block on top of
- *   the form. Page children: first = title block, second = form.
+ * - side-by-side: left panel is fixed ytskola marketing (solid red, white logo,
+ *   hero copy, copyright). Right panel is white and holds the form. Page
+ *   children: first = title block, second = form.
  * - top-to-bottom: original upstream behavior with the ytskola color logo.
  */
 export function DynamicTheme({
@@ -43,35 +45,46 @@ export function DynamicTheme({
 
             return (
               <div className="relative mx-auto w-full max-w-[1100px] px-4 py-4 md:px-8">
-                <Card padding="">
-                  <div className="grid min-h-[520px] grid-cols-1 overflow-hidden lg:grid-cols-2">
+                <div className="overflow-hidden rounded-[12px] border border-[#8D8D8D] bg-white">
+                  <div className="grid min-h-[520px] grid-cols-1 lg:grid-cols-2">
                     {/* Left: ytskola marketing panel */}
-                    <div className="relative hidden overflow-hidden bg-[linear-gradient(to_bottom,#FFB3C1_0%,#E63946_50%,#8B0000_100%)] text-white lg:flex">
-                      <div className="flex w-full flex-col justify-between p-10">
-                        <img
-                          src={ytskolaLogoWhite}
-                          alt="YT Škola"
-                          className="h-auto w-auto max-w-[240px]"
-                        />
-                        <div className="max-w-xl space-y-6">
-                          <h1 className="text-4xl font-extrabold leading-tight xl:text-5xl">
-                            Dobrodošli u Youtube Školu{" "}
+                    <div className="hidden bg-[#EF0000] text-white lg:flex">
+                      <div
+                        className="flex w-full flex-col items-center gap-[60px] px-[80px] py-[112px] text-center"
+                        style={HANKEN}
+                      >
+                        <div className="flex w-full flex-col items-center gap-[40px]">
+                          <img
+                            src={ytskolaLogoWhite}
+                            alt="YT Škola"
+                            className="h-auto w-auto max-w-[240px]"
+                          />
+                          <h1
+                            className="text-[48px] font-bold leading-none text-white"
+                            style={HANKEN}
+                          >
+                            Dobrodošli u
+                            <br />
+                            YouTube školu!{" "}
                             <span role="img" aria-label="pozdrav">
                               👋
                             </span>
                           </h1>
-                          <p className="text-lg text-white/90">
-                            Prijavite se na svoj račun za pristup materijalima kursa.
-                          </p>
                         </div>
-                        <div className="text-sm text-white/80">
-                          Copyright © 2020–{new Date().getFullYear()} Relativno LLC
-                        </div>
+                        <p
+                          className="text-[24px] font-medium leading-none text-white"
+                          style={HANKEN}
+                        >
+                          Za pristup materijalima kursa, prijavite se na svoj račun.
+                        </p>
+                        <p className="text-sm text-white" style={HANKEN}>
+                          Copyright c 2020-{new Date().getFullYear()} relativno LLC
+                        </p>
                       </div>
                     </div>
 
                     {/* Right: page title + form */}
-                    <div className="flex items-center justify-center p-6 lg:p-10">
+                    <div className="flex items-center justify-center bg-white p-6 lg:p-10">
                       <div className="w-full max-w-[440px] space-y-6">
                         {hasTitleAndForm ? (
                           <>
@@ -84,7 +97,7 @@ export function DynamicTheme({
                       </div>
                     </div>
                   </div>
-                </Card>
+                </div>
               </div>
             );
           })()
