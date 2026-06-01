@@ -44,7 +44,7 @@ export function DynamicTheme({
             const hasTitleAndForm = childArray.length === 2;
 
             return (
-              <div className="relative mx-auto w-full max-w-[1100px] px-4 py-4 md:px-8">
+              <div className="relative mx-auto w-full max-w-[1360px] px-4 py-4 md:px-8">
                 <div className="overflow-hidden rounded-[12px] border border-[#8D8D8D] bg-white">
                   <div className="grid min-h-[520px] grid-cols-1 lg:grid-cols-2">
                     {/* Left: ytskola marketing panel */}
@@ -57,7 +57,7 @@ export function DynamicTheme({
                           <img
                             src={ytskolaLogoWhite}
                             alt="YT Škola"
-                            className="h-auto w-auto max-w-[240px]"
+                            className="h-auto w-auto max-w-[160px]"
                           />
                           <h1
                             className="text-[48px] font-bold leading-none text-white"
@@ -72,12 +72,12 @@ export function DynamicTheme({
                           </h1>
                         </div>
                         <p
-                          className="text-[24px] font-medium leading-none text-white"
+                          className="text-[18px] font-medium leading-none text-white"
                           style={HANKEN}
                         >
                           Za pristup materijalima kursa, prijavite se na svoj račun.
                         </p>
-                        <p className="text-sm text-white" style={HANKEN}>
+                        <p className="text-[18px] leading-none text-white" style={HANKEN}>
                           Copyright c 2020-{new Date().getFullYear()} relativno LLC
                         </p>
                       </div>

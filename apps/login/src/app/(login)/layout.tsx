@@ -54,7 +54,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 <BackgroundWrapper
                   className={`relative flex min-h-screen flex-col justify-center bg-background-light-600 dark:bg-background-dark-600`}
                 >
-                  <div className="relative mx-auto w-full max-w-[1100px] py-8">
+                  <div className="relative mx-auto w-full max-w-[1360px] py-8">
                     <div>{children}</div>
                     <div className="mx-auto flex max-w-[440px] flex-row items-center justify-end space-x-4 px-4 py-4 md:max-w-full md:px-8">
                       <ThemeSwitch />
