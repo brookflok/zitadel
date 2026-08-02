@@ -28,10 +28,10 @@
     "register": "Registrirajte novog korisnika",
     "submit": "Nastavi",
     "labels": {
-      "loginname": "Korisničko ime",
-      "username": "Korisničko ime",
-      "usernameOrPhoneNumber": "Korisničko ime ili broj telefona",
-      "usernameOrEmail": "Korisničko ime ili e-mail"
+      "loginname": "Email",
+      "username": "Email",
+      "usernameOrPhoneNumber": "Email ili broj telefona",
+      "usernameOrEmail": "Email"
     },
     "required": {
       "loginName": "Ovo polje je obavezno"
