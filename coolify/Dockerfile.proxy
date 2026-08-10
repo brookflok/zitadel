@@ -1,0 +1,8 @@
+# The inner Traefik with its routing baked in.
+#
+# The config is copied into the image rather than bind-mounted so the stack has
+# no dependency on a host path surviving between deploys. Build context is the
+# repo root, matching how Coolify invokes compose.
+
+FROM traefik:v3.6.8
+COPY coolify/traefik-dynamic.yml /etc/traefik/dynamic/zitadel.yml

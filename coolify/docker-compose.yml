@@ -20,16 +20,18 @@
 
 services:
   proxy:
-    image: ${TRAEFIK_IMAGE}
+    # Built rather than pulled so coolify/traefik-dynamic.yml ships inside the
+    # image; see Dockerfile.proxy.
+    build:
+      context: .
+      dockerfile: coolify/Dockerfile.proxy
     restart: unless-stopped
     command:
-      - --providers.docker=true
-      - --providers.docker.exposedbydefault=false
-      - --providers.docker.network=zitadel-ytskola
-      # Without this constraint the docker provider would also pick up the
-      # Traefik labels Coolify injects into this very proxy service and route
-      # the host straight back to itself.
-      - --providers.docker.constraints=Label(`zitadel.stack`,`ytskola`)
+      # File provider, not docker. The docker provider would expose these
+      # routers to Coolify's unconstrained Traefik on the shared socket, and
+      # would also lose ${VAR} interpolation in labels.
+      - --providers.file.directory=/etc/traefik/dynamic
+      - --providers.file.watch=true
       - --entrypoints.web.address=:80
       - --api.dashboard=false
       - --api.insecure=false
@@ -41,8 +43,12 @@ services:
       - 80
     networks:
       - zitadel
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - coolify
+    labels:
+      # Coolify's Traefik has no providers.docker.network setting, so with this
+      # container on more than one network it cannot decide which IP to dial.
+      # Naming the shared network makes the outer hop deterministic.
+      - traefik.docker.network=coolify
     healthcheck:
       test: ["CMD", "traefik", "healthcheck", "--ping", "--ping.entrypoint=web"]
       interval: 10s
@@ -101,36 +107,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    labels:
-      # Coolify re-emits compose labels through its own parser, which does NOT
-      # interpolate ${VARS} -- they land as literal text. So no variables here.
-      # Host() is also gone: Coolify's Traefik has already matched the domain
-      # before traffic reaches this proxy, which makes host matching redundant
-      # and keeps these rules valid across a domain change.
-      - zitadel.stack=ytskola
-      - traefik.enable=true
-      - traefik.docker.network=zitadel-ytskola
-
-      - traefik.http.services.zitadel-api.loadbalancer.server.port=8080
-      - traefik.http.services.zitadel-api.loadbalancer.server.scheme=h2c
-
-      - traefik.http.middlewares.zitadel-strip-api.stripprefix.prefixes=/api
-      - traefik.http.middlewares.zitadel-strip-api.stripprefix.forceSlash=false
-
-      # All gRPC / Connect-RPC traffic rides the catch-all router below,
-      # because the backend is already reached over h2c.
-      - traefik.http.routers.zitadel-api-alias-web.rule=PathPrefix(`/api`)
-      - traefik.http.routers.zitadel-api-alias-web.entrypoints=web
-      - traefik.http.routers.zitadel-api-alias-web.middlewares=zitadel-strip-api
-      - traefik.http.routers.zitadel-api-alias-web.service=zitadel-api
-      - traefik.http.routers.zitadel-api-alias-web.priority=200
-
-      # PathPrefix(`/`) is the positive anchor a rule needs; the negatives
-      # carve out what the higher-priority routers own.
-      - traefik.http.routers.zitadel-canonical-web.rule=PathPrefix(`/`) && !PathPrefix(`/ui/v2/login`) && !PathPrefix(`/api`) && !Path(`/`)
-      - traefik.http.routers.zitadel-canonical-web.entrypoints=web
-      - traefik.http.routers.zitadel-canonical-web.service=zitadel-api
-      - traefik.http.routers.zitadel-canonical-web.priority=100
+    # No traefik labels: routing lives in coolify/traefik-dynamic.yml. Any label
+    # here would also be read by Coolify's Traefik, which shares the socket.
 
   zitadel-login:
     # Coolify invokes compose with --project-directory set to the repo root, so
@@ -163,24 +141,7 @@ services:
     depends_on:
       zitadel-api:
         condition: service_healthy
-    labels:
-      - zitadel.stack=ytskola
-      - traefik.enable=true
-      - traefik.docker.network=zitadel-ytskola
-      - traefik.http.services.zitadel-login.loadbalancer.server.port=3000
-
-      - traefik.http.middlewares.zitadel-root-rewrite.replacepath.path=/ui/v2/login/
-
-      - traefik.http.routers.zitadel-root-web.rule=Path(`/`)
-      - traefik.http.routers.zitadel-root-web.entrypoints=web
-      - traefik.http.routers.zitadel-root-web.middlewares=zitadel-root-rewrite
-      - traefik.http.routers.zitadel-root-web.service=zitadel-login
-      - traefik.http.routers.zitadel-root-web.priority=400
-
-      - traefik.http.routers.zitadel-login-web.rule=PathPrefix(`/ui/v2/login`)
-      - traefik.http.routers.zitadel-login-web.entrypoints=web
-      - traefik.http.routers.zitadel-login-web.service=zitadel-login
-      - traefik.http.routers.zitadel-login-web.priority=250
+    # No traefik labels -- see the note on zitadel-api.
 
   postgres:
     image: ${POSTGRES_IMAGE}
@@ -204,10 +165,11 @@ services:
 
 networks:
   zitadel:
-    # Hardcoded rather than parameterised: the Traefik labels above cannot
-    # interpolate, so a variable here would be a second source of truth that
-    # silently disagrees the moment one of them changes.
     name: zitadel-ytskola
+  # Coolify's own network, where coolify-proxy lives. The inner proxy joins it
+  # so the outer hop has a network in common to dial.
+  coolify:
+    external: true
 
 volumes:
   postgres-data:

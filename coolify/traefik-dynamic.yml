@@ -1,0 +1,72 @@
+# Inner Traefik routing, as a file provider rather than docker labels.
+#
+# Labels cannot be used here for two independent reasons:
+#   1. Coolify re-emits compose labels through its own parser and does not
+#      interpolate ${VARS}, so any variable lands as literal text.
+#   2. Coolify's own Traefik reads the same docker socket with no constraint,
+#      so it ingests these routers too and logs "EntryPoint doesn't exist: web".
+#      Its entrypoints are http/https. Had they been named `web`, a Host-less
+#      rule like PathPrefix(`/`) would have hijacked traffic for other apps.
+#
+# Rules, priorities and the h2c upgrade match production's labels at
+# /opt/zitadel on 46.225.98.108. Host() matchers are omitted: Coolify's Traefik
+# has already matched the domain before traffic arrives here, which also keeps
+# this file valid across a domain change.
+
+http:
+  middlewares:
+    zitadel-strip-api:
+      stripPrefix:
+        prefixes:
+          - /api
+
+    zitadel-root-rewrite:
+      replacePath:
+        path: /ui/v2/login/
+
+  routers:
+    zitadel-root:
+      rule: "Path(`/`)"
+      entryPoints:
+        - web
+      middlewares:
+        - zitadel-root-rewrite
+      service: zitadel-login
+      priority: 400
+
+    zitadel-login:
+      rule: "PathPrefix(`/ui/v2/login`)"
+      entryPoints:
+        - web
+      service: zitadel-login
+      priority: 250
+
+    zitadel-api-alias:
+      rule: "PathPrefix(`/api`)"
+      entryPoints:
+        - web
+      middlewares:
+        - zitadel-strip-api
+      service: zitadel-api
+      priority: 200
+
+    # PathPrefix(`/`) is the positive anchor; the negatives carve out what the
+    # higher-priority routers own. This one carries all gRPC / Connect-RPC
+    # traffic, which is why its service speaks h2c.
+    zitadel-canonical:
+      rule: "PathPrefix(`/`) && !PathPrefix(`/ui/v2/login`) && !PathPrefix(`/api`) && !Path(`/`)"
+      entryPoints:
+        - web
+      service: zitadel-api
+      priority: 100
+
+  services:
+    zitadel-api:
+      loadBalancer:
+        servers:
+          - url: "h2c://zitadel-api:8080"
+
+    zitadel-login:
+      loadBalancer:
+        servers:
+          - url: "http://zitadel-login:3000"
