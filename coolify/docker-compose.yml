@@ -49,6 +49,19 @@ services:
       # container on more than one network it cannot decide which IP to dial.
       # Naming the shared network makes the outer hop deterministic.
       - traefik.docker.network=coolify
+
+      # Coolify 4.1.2's compose path emits routers named
+      # http-0-<uuid>-proxy / https-0-<uuid>-proxy but, unlike its dockerfile
+      # path, emits no matching service or port. The routers then reference a
+      # service Traefik cannot resolve, so it discards them: every request 404s
+      # and ACME never runs because no valid router carries the certresolver.
+      #
+      # The router names embed the application uuid. That is deliberate -- the
+      # uuid is fixed for the life of this app, whereas hardcoding the domain
+      # would need editing at the cutover to the real hostname.
+      - traefik.http.routers.http-0-mlty8kfc4j7dgydekfegin3k-proxy.service=zitadel-entry
+      - traefik.http.routers.https-0-mlty8kfc4j7dgydekfegin3k-proxy.service=zitadel-entry
+      - traefik.http.services.zitadel-entry.loadbalancer.server.port=80
     healthcheck:
       test: ["CMD", "traefik", "healthcheck", "--ping", "--ping.entrypoint=web"]
       interval: 10s
