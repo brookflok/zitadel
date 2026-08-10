@@ -81,18 +81,63 @@ container.
 
 ### Instance domains
 
-Zitadel resolves the instance from the request `Host`. The restored database
-only knows prod's domains, so requests to any other host fail to match an
-instance. Register the new host in `projections.instance_domains` (or via the
-System API) before testing.
+Not needed in practice. Zitadel resolved the restored instance from
+`ZITADEL_EXTERNALDOMAIN` even though `projections.instance_domains` only listed
+prod's hostnames, because there is a single instance. Worth rechecking if a
+second instance is ever added.
+
+### The login redirect points at production
+
+This one does need fixing, and it is not obvious. The restored instance carries
+its own LoginV2 base URI in `projections.instance_features5` under key
+`login_v2`, holding `"Host": "auth.ytskola.com"`. The
+`ZITADEL_DEFAULTINSTANCE_FEATURES_LOGINV2_BASEURI` variable does **not** override
+it -- `DEFAULTINSTANCE` applies only to instances Zitadel creates itself, never
+to a restored one. Until it is changed, opening the console on the clone
+redirects the user to production to log in.
+
+```sql
+update projections.instance_features5
+   set value = jsonb_set(value::jsonb, '{base_uri,Host}', '"<new host>"'::jsonb)::text::jsonb
+ where key = 'login_v2';
+```
+
+Restart the API afterwards; it caches instance features in memory.
+
+This is a projection-level edit, so a projection rebuild (a Zitadel version
+upgrade, say) reverts it to the value in the eventstore. At the cutover to
+`auth.ytskola.com` the stored value becomes correct again and the edit stops
+mattering.
+
+## Deployed instance
+
+| | |
+|---|---|
+| Coolify application | `ytskola-zitadel`, uuid `mlty8kfc4j7dgydekfegin3k`, numeric id `9` |
+| URL | https://mlty8kfc4j7dgydekfegin3k.app.bigburg.net |
 
 ## Verifying
 
 ```bash
-ssh coolify 'docker ps --filter "label=coolify.applicationId=<id>" \
-  --format "{{.Names}} :: {{.Status}}"'    # expect 4 services healthy
+APPID=9
+ssh coolify "docker ps --filter 'label=coolify.applicationId=$APPID' \
+  --format '{{.Names}} :: {{.Status}}'"     # expect 4 services, all healthy
 ```
 
-Then, from outside: `/` must serve the Croatian login page, `/ui/v2/login/login`
-must render it too, and the console must load at `/ui/console`. A green
-deployment means none of that on its own.
+All four must be healthy, the proxy included. Traefik **skips containers marked
+unhealthy**, so an unhealthy proxy publishes no router at all and every request
+falls through to Coolify's 503 catch-all -- with nothing logged to explain it.
+
+```bash
+U=https://mlty8kfc4j7dgydekfegin3k.app.bigburg.net
+curl -s -o /dev/null -w '%{http_code}\n' $U/                                 # 200, Croatian login
+curl -s -o /dev/null -w '%{http_code}\n' $U/ui/console                       # 200
+curl -s $U/.well-known/openid-configuration | jq -r .issuer                  # must be this host
+curl -s $U/oauth/v2/keys | jq '.keys | length'                               # >0 proves the masterkey
+```
+
+`/oauth/v2/keys` is the check that matters after a restore: returning keys means
+Zitadel decrypted the signing keys, which only succeeds with the correct
+masterkey. Everything else here passes with a wrong one.
+
+A green deployment implies none of the above.
