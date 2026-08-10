@@ -63,7 +63,19 @@ services:
       - traefik.http.routers.https-0-mlty8kfc4j7dgydekfegin3k-proxy.service=zitadel-entry
       - traefik.http.services.zitadel-entry.loadbalancer.server.port=80
     healthcheck:
-      test: ["CMD", "traefik", "healthcheck", "--ping", "--ping.entrypoint=web"]
+      # `traefik healthcheck` re-parses only the flags handed to it, so the
+      # entrypoint has to be declared here too. Without it the check fails with
+      # "ping: missing web entry point", the container goes unhealthy, and
+      # Traefik silently skips unhealthy containers -- meaning no router is
+      # published for this stack at all and every request hits Coolify's 503
+      # catch-all. Production has no healthcheck on its proxy.
+      test:
+        - CMD
+        - traefik
+        - healthcheck
+        - --ping
+        - --entrypoints.web.address=:80
+        - --ping.entrypoint=web
       interval: 10s
       timeout: 10s
       retries: 10
