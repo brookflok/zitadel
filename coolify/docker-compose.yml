@@ -126,8 +126,11 @@ services:
       - traefik.http.routers.zitadel-canonical-web.priority=100
 
   zitadel-login:
+    # Coolify invokes compose with --project-directory set to the repo root, so
+    # relative paths here resolve from there, not from this file's directory.
+    # Dockerfile.build also requires the monorepo root as its context.
     build:
-      context: ..
+      context: .
       dockerfile: apps/login/Dockerfile.build
     restart: unless-stopped
     user: "0"
