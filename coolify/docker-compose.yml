@@ -25,7 +25,7 @@ services:
     command:
       - --providers.docker=true
       - --providers.docker.exposedbydefault=false
-      - --providers.docker.network=${ZITADEL_NETWORK}
+      - --providers.docker.network=zitadel-ytskola
       # Without this constraint the docker provider would also pick up the
       # Traefik labels Coolify injects into this very proxy service and route
       # the host straight back to itself.
@@ -102,9 +102,14 @@ services:
       postgres:
         condition: service_healthy
     labels:
+      # Coolify re-emits compose labels through its own parser, which does NOT
+      # interpolate ${VARS} -- they land as literal text. So no variables here.
+      # Host() is also gone: Coolify's Traefik has already matched the domain
+      # before traffic reaches this proxy, which makes host matching redundant
+      # and keeps these rules valid across a domain change.
       - zitadel.stack=ytskola
       - traefik.enable=true
-      - traefik.docker.network=${ZITADEL_NETWORK}
+      - traefik.docker.network=zitadel-ytskola
 
       - traefik.http.services.zitadel-api.loadbalancer.server.port=8080
       - traefik.http.services.zitadel-api.loadbalancer.server.scheme=h2c
@@ -114,13 +119,15 @@ services:
 
       # All gRPC / Connect-RPC traffic rides the catch-all router below,
       # because the backend is already reached over h2c.
-      - traefik.http.routers.zitadel-api-alias-web.rule=Host(`${ZITADEL_DOMAIN}`) && PathPrefix(`/api`)
+      - traefik.http.routers.zitadel-api-alias-web.rule=PathPrefix(`/api`)
       - traefik.http.routers.zitadel-api-alias-web.entrypoints=web
       - traefik.http.routers.zitadel-api-alias-web.middlewares=zitadel-strip-api
       - traefik.http.routers.zitadel-api-alias-web.service=zitadel-api
       - traefik.http.routers.zitadel-api-alias-web.priority=200
 
-      - traefik.http.routers.zitadel-canonical-web.rule=Host(`${ZITADEL_DOMAIN}`) && !PathPrefix(`/ui/v2/login`) && !PathPrefix(`/api`) && !Path(`/`)
+      # PathPrefix(`/`) is the positive anchor a rule needs; the negatives
+      # carve out what the higher-priority routers own.
+      - traefik.http.routers.zitadel-canonical-web.rule=PathPrefix(`/`) && !PathPrefix(`/ui/v2/login`) && !PathPrefix(`/api`) && !Path(`/`)
       - traefik.http.routers.zitadel-canonical-web.entrypoints=web
       - traefik.http.routers.zitadel-canonical-web.service=zitadel-api
       - traefik.http.routers.zitadel-canonical-web.priority=100
@@ -159,18 +166,18 @@ services:
     labels:
       - zitadel.stack=ytskola
       - traefik.enable=true
-      - traefik.docker.network=${ZITADEL_NETWORK}
+      - traefik.docker.network=zitadel-ytskola
       - traefik.http.services.zitadel-login.loadbalancer.server.port=3000
 
       - traefik.http.middlewares.zitadel-root-rewrite.replacepath.path=/ui/v2/login/
 
-      - traefik.http.routers.zitadel-root-web.rule=Host(`${ZITADEL_DOMAIN}`) && Path(`/`)
+      - traefik.http.routers.zitadel-root-web.rule=Path(`/`)
       - traefik.http.routers.zitadel-root-web.entrypoints=web
       - traefik.http.routers.zitadel-root-web.middlewares=zitadel-root-rewrite
       - traefik.http.routers.zitadel-root-web.service=zitadel-login
       - traefik.http.routers.zitadel-root-web.priority=400
 
-      - traefik.http.routers.zitadel-login-web.rule=Host(`${ZITADEL_DOMAIN}`) && PathPrefix(`/ui/v2/login`)
+      - traefik.http.routers.zitadel-login-web.rule=PathPrefix(`/ui/v2/login`)
       - traefik.http.routers.zitadel-login-web.entrypoints=web
       - traefik.http.routers.zitadel-login-web.service=zitadel-login
       - traefik.http.routers.zitadel-login-web.priority=250
@@ -197,7 +204,10 @@ services:
 
 networks:
   zitadel:
-    name: ${ZITADEL_NETWORK}
+    # Hardcoded rather than parameterised: the Traefik labels above cannot
+    # interpolate, so a variable here would be a second source of truth that
+    # silently disagrees the moment one of them changes.
+    name: zitadel-ytskola
 
 volumes:
   postgres-data:
