@@ -114,7 +114,42 @@ mattering.
 | | |
 |---|---|
 | Coolify application | `ytskola-zitadel`, uuid `mlty8kfc4j7dgydekfegin3k`, numeric id `9` |
-| URL | https://mlty8kfc4j7dgydekfegin3k.app.bigburg.net |
+| URL | https://auth.ytskola.com |
+
+This is production as of 2026-08-11. The old stack at `46.225.98.108:/opt/zitadel`
+is **stopped, not removed** — its `zitadel_postgres-data`,
+`zitadel_zitadel-bootstrap` and `zitadel_letsencrypt` volumes are intact.
+
+Rollback is: point the `auth.ytskola.com` A record back to `46.225.98.108` and
+`docker start zitadel-postgres-1 zitadel-proxy-1 zitadel-zitadel-api-1 zitadel-zitadel-login-1`.
+That loses every event recorded on Coolify after the cutover, since the two
+databases diverge from the moment traffic moved.
+
+Note that the old host's `ytskola-kurs` containers were routed by the Zitadel
+Traefik (router `kurs`, `Host(izazov.ytskola.com)`) and are now unrouted there.
+Nothing points at them — `izazov.ytskola.com` resolves to the Coolify host and is
+served by Coolify application `tmsl0nrzt6ivyqj93jvlsl57`.
+
+### Changing the domain again
+
+Four things, and only one of them is DNS:
+
+1. The A record.
+2. `docker_compose_domains` — **replace**, never add a second entry. Coolify names
+   the routers `http-0-<uuid>-proxy`; the `0` is the domain slot, and the
+   `traefik.http.services.zitadel-entry` label this compose supplies is bound to
+   slot 0. A second domain creates slot-1 routers with no service behind them,
+   which 404s silently.
+3. The `ZITADEL_DOMAIN` env var, followed by a **redeploy** — it is a compose
+   interpolation, so a restart will not pick it up.
+4. The `login_v2` row in `projections.instance_features5`, then an API restart.
+
+Set the Coolify domain *after* the A record has moved. ACME uses HTTP-01, so the
+certificate cannot be issued until DNS already points at the Coolify host; doing
+it in the other order puts Traefik into a retry backoff of minutes.
+
+Nothing needs to change in Supabase, and no OIDC client needs re-trusting: the
+database carries the same signing keys, so the JWKS `kid`s are unchanged.
 
 ## Verifying
 
